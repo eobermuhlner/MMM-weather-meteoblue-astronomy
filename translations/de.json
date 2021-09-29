@@ -1,0 +1,13 @@
+{
+	"LOADING": "Lade &hellip;",
+	"MISSING_APIKEY": "Bitte setzen sie den <i>apikey</i> in der Konfiguration dieses Moduls: '{module}'.",
+
+	"SUN": "Mo",
+	"MON": "Di",
+	"TUE": "Mi",
+	"WED": "Do",
+	"THU": "Fr",
+	"FRI": "Sa",
+	"SAT": "So"
+
+}

@@ -1,0 +1,12 @@
+{
+	"LOADING": "Loading &hellip;",
+	"MISSING_APIKEY": "Please set the <i>apikey</i> in the config for this module: '{module}'.",
+
+	"SUN": "Sun",
+	"MON": "Mon",
+	"TUE": "Tue",
+	"WED": "Wed",
+	"THU": "Thu",
+	"FRI": "Fri",
+	"SAT": "Sat"
+}
