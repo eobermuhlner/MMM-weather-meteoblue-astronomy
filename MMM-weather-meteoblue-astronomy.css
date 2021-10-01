@@ -1,0 +1,18 @@
+
+.table-icon {
+  padding-left: 10px;
+}
+
+.center-icon {
+  width: 33px;
+  margin: auto;
+}
+
+.align-center {
+    text-align: center;
+}
+
+.cloudlayer {
+    display: flex;
+    text-align: center;
+}
