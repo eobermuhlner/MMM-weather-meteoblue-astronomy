@@ -10,6 +10,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		layout: "vertical",
 		maxElements: 10,
 		opacityFactor: 0.8,
+		timeFormat: "hh:mm",
 
 		daysOfWeek: [ "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" ]
 	},
@@ -76,20 +77,20 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 			wrapper.appendChild(dom);
 		} else {
 			if (this.weather.data_xmin) {
-				dom = this.getForecastDom(this.weather.data_xmin, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
+				dom = this.getForecastDom(this.weather.data_xmin, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
 				wrapper.appendChild(dom);
 			}
 			if (this.weather.data_1h) {
-				dom = this.getForecastDom(this.weather.data_1h, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
+				dom = this.getForecastDom(this.weather.data_1h, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
 				wrapper.appendChild(dom);
 			}
 			if (this.weather.data_3h) {
 				hours_3 = Math.floor(mom.hours()/3)*3;
-				dom = this.getForecastDom(this.weather.data_3h, true, 'YYYY-MM-DD hh:mm', mom.hours(hours_3).minutes(0).seconds(0).milliseconds(0));
+				dom = this.getForecastDom(this.weather.data_3h, true, true, 'YYYY-MM-DD hh:mm', mom.hours(hours_3).minutes(0).seconds(0).milliseconds(0));
 				wrapper.appendChild(dom);
 			}
 			if (this.weather.data_day) {
-				dom = this.getForecastDom(this.weather.data_day, false, 'YYYY-MM-DD', mom.startOf('day'));
+				dom = this.getForecastDom(this.weather.data_day, false, false, 'YYYY-MM-DD', mom.startOf('day'));
 				wrapper.appendChild(dom);
 			}
 		}
@@ -143,15 +144,15 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		return table;
 	},
 
-	getForecastDom: function(data, detailedPicto, dateTimeFormat, roundedNow) {
+	getForecastDom: function(data, detailedPicto, showTime, dateTimeFormat, roundedNow) {
 		if (this.config.layout === 'vertical') {
-			return this.getForecastVerticalDom(data, detailedPicto, dateTimeFormat, roundedNow);
+			return this.getForecastVerticalDom(data, detailedPicto, showTime, dateTimeFormat, roundedNow);
 		} else {
-			return this.getForecastHorizontalDom(data, detailedPicto, dateTimeFormat, roundedNow);
+			return this.getForecastHorizontalDom(data, detailedPicto, showTime, dateTimeFormat, roundedNow);
 		}
 	},
 
-	getForecastHorizontalDom: function(data, detailedPicto, dateTimeFormat, roundedNow) {
+	getForecastHorizontalDom: function(data, detailedPicto, showTime, dateTimeFormat, roundedNow) {
 		var self = this;
 		table = document.createElement("table");
 		table.className = "small";
@@ -159,11 +160,26 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		tbody = document.createElement("tbody");
 		table.appendChild(tbody);
 
-		if (data.time && false) {
+		if (data.time) {
+			var lastDayOfWeek = null;
 			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
 				td = document.createElement("td");
 				td.className = "align-left";
-				td.innerHTML = data.time[i];
+				var dayOfWeek = mom.day();
+				if (dayOfWeek != lastDayOfWeek) {
+					td.innerHTML = self.translate(self.config.daysOfWeek[mom.day()]);
+				}
+				lastDayOfWeek = dayOfWeek;
+				return td;
+			});
+			tbody.appendChild(tr);
+		}
+
+		if (data.time && showTime) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+				td = document.createElement("td");
+				td.className = "align-left";
+				td.innerHTML = mom.format(self.config.timeFormat);
 				return td;
 			});
 			tbody.appendChild(tr);
@@ -172,6 +188,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		if (data.pictocode) {
 			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
 				var td = document.createElement("td");
+				td.className = "align-left";
 				var img = document.createElement("img");
 				if (detailedPicto) {
 					img.src = self.pictocodeDetailedToUrl(data.pictocode[i], data.isdaylight[i])
@@ -379,6 +396,8 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		tbody = document.createElement("tbody");
 		table.appendChild(tbody);
 
+		var lastDayOfWeek = null;
+
 		// add data rows
 		opacity = 1.0;
 		for (let i = 0; i < data.time.length && i < this.config.maxElements; i++) {
@@ -392,12 +411,22 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 			opacity = opacity * this.config.opacityFactor;
 			tbody.appendChild(tr);
 
-			td = document.createElement("td");
-			td.className = "align-left";
-			td.innerHTML = data.time[i] + " " + this.translate(this.config.daysOfWeek[mom.day()]);
+			if (data.time) {
+				td = document.createElement("td");
+				td.className = "align-left";
+				var dayOfWeek = mom.day();
+				if (dayOfWeek != lastDayOfWeek) {
+					td.innerHTML = this.translate(this.config.daysOfWeek[mom.day()]);
+				}
+				lastDayOfWeek = dayOfWeek;
+				tr.appendChild(td);
 
-			tr.appendChild(td);
-
+				td = document.createElement("td");
+				td.className = "align-left";
+				lastDayOfWeek = dayOfWeek;
+				td.innerHTML = mom.format(this.config.timeFormat);
+				tr.appendChild(td);
+			}
 
 			if (data.pictocode) {
 				td = document.createElement("td");
@@ -424,14 +453,24 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				tr.appendChild(td);
 
 				td = document.createElement("td");
-				td.innerHTML = this.round1(data.precipitation[i]) + " mm";
-				td.className = "bright";
+
+				scan = document.createElement("scan");
+				scan.innerHTML = this.round1(data.precipitation[i]);
+				scan.className = "bright";
+				td.appendChild(scan);
+
+				scan = document.createElement("scan");
+				scan.innerHTML = "&nbsp;mm";
+				scan.className = "dimmed xsmall";
+				td.appendChild(scan);
+
 				tr.appendChild(td);
 			}
 
 			if (data.precipitation_probability) {
 				td = document.createElement("td");
-				td.innerHTML = data.precipitation_probability[i] + "%";
+				td.innerHTML = "&nbsp;" + data.precipitation_probability[i] + "%";
+				td.className = "dimmed xsmall";
 				tr.appendChild(td);
 			}
 
@@ -479,27 +518,45 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 			if (data.windspeed) {
 				td = document.createElement("td");
-				td.innerHTML = this.round1(data.windspeed[i]) + " m/s";
-				td.className = "bright";
+
+				scan = document.createElement("scan");
+				scan.innerHTML = this.round1(data.windspeed[i]);
+				scan.className = "bright";
+				td.appendChild(scan);
+
+				scan = document.createElement("scan");
+				scan.innerHTML = "&nbsp;m/s";
+				scan.className = "dimmed xsmall";
+				td.appendChild(scan);
+
 				tr.appendChild(td);
 			}
 
 			if (data.windspeed_max) {
 				td = document.createElement("td");
-				td.innerHTML = this.round1(data.windspeed_max[i]) + " m/s";
-				td.className = "bright";
+
+				scan = document.createElement("scan");
+				scan.innerHTML = this.round1(data.windspeed_max[i]);
+				scan.className = "bright";
+				td.appendChild(scan);
+
+				scan = document.createElement("scan");
+				scan.innerHTML = "&nbsp;m/s";
+				scan.className = "dimmed xsmall";
+				td.appendChild(scan);
+
 				tr.appendChild(td);
 			}
 
 			if (data.winddirection) {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"center-icon wi wi-wind from-" + this.round0(data.winddirection[i]) + "-deg\">&nbsp;</i>";
-				td.className = "dimmed";
-				tr.appendChild(td);
+//				td = document.createElement("td");
+//				td.innerHTML = "<i class=\"center-icon wi wi-wind from-" + this.round0(data.winddirection[i]) + "-deg\">&nbsp;</i>";
+//				td.className = "dimmed";
+//				tr.appendChild(td);
 
 				td = document.createElement("td");
-				td.innerHTML = this.translate(this.degToCompass(data.winddirection[i]));
-				td.className = "bright";
+				td.innerHTML = "&nbsp;" + this.translate(this.degToCompass(data.winddirection[i]));
+				td.className = "dimmed";
 				tr.appendChild(td);
 			}
 
@@ -512,33 +569,51 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 			if (data.lowclouds) {
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.lowclouds[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.lowclouds[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 			if (data.midclouds) {
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.midclouds[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.midclouds[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 			if (data.highclouds) {
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.highclouds[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.highclouds[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 
 			if (data.lowclouds_min) {
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.lowclouds_min[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.lowclouds_min[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 			if (data.midclouds_min) {
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.midclouds_min[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.midclouds_min[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 			if (data.highclouds_min) {
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.highclouds_min[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.highclouds_min[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 
@@ -548,23 +623,42 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				tr.appendChild(td);
 
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.lowclouds_max[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.lowclouds_max[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 			if (data.midclouds_max) {
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.midclouds_max[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.midclouds_max[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 			if (data.highclouds_max) {
 				td = document.createElement("td");
-				td.appendChild(this.createCloudCoverElement(data.highclouds_max[i]));
+				div = document.createElement("div");
+				div.appendChild(this.createCloudCoverElement(data.highclouds_max[i]));
+				div.className = "cloudlayer";
+				td.appendChild(div);
 				tr.appendChild(td);
 			}
 
 			if (data.visibility) {
 				td = document.createElement("td");
-				td.innerHTML = data.visibility[i] + " m";
+
+				span = document.createElement("span");
+				span.innerHTML = data.visibility[i];
+				span.className = "bright";
+				td.appendChild(span);
+
+				span = document.createElement("span");
+				span.innerHTML = "&nbsp;m";
+				span.className = "dimmed xsmall";
+				td.appendChild(span);
+
 				tr.appendChild(td);
 			}
 		}
