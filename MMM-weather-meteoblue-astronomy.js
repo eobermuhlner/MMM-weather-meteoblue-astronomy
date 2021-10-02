@@ -6,7 +6,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		refreshMinutes: 0,
 		tz: "Europe%2FZurich",
 		pictogramSmall: 30,
-		pictogramLarge: 80,
+		pictogramLarge: 100,
 		layout: "vertical",
 		maxElements: 10,
 		opacityFactor: 0.8,
@@ -121,7 +121,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		if (data.temperature) {
 			td = document.createElement("td");
 			td.className = "align-left";
-			td.innerHTML = "<i class=\"fa fa-thermometer-half\">&nbsp;</i>";
+			td.innerHTML = "<i class=\"fa fa-thermometer-half\"></i>";
 			tr.appendChild(td);
 
 			td = document.createElement("td");
@@ -133,7 +133,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		if (data.windspeed) {
 			td = document.createElement("td");
 			td.className = "align-left";
-			td.innerHTML = "<i class=\"wi wi-strong-wind\">&nbsp;</i>";
+			td.innerHTML = "<i class=\"wi wi-strong-wind\"></i>";
 			tr.appendChild(td);
 
 			td = document.createElement("td");
@@ -162,7 +162,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 		if (data.time) {
 			var lastDayOfWeek = null;
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, null, function(i) {
 				td = document.createElement("td");
 				td.className = "align-left";
 				var dayOfWeek = mom.day();
@@ -176,17 +176,22 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		}
 
 		if (data.time && showTime) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
 				td = document.createElement("td");
-				td.className = "align-left";
+				td.innerHTML = "<i class=\"wi wi-time-" + self.round0(roundedNow.hours()) + "\"></i>";
+				td.className = "dimmed align-left";
+				return td;
+			}, function(i) {
+				td = document.createElement("td");
 				td.innerHTML = mom.format(self.config.timeFormat);
+				td.className = "align-left";
 				return td;
 			});
 			tbody.appendChild(tr);
 		}
 
 		if (data.pictocode) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, null, function(i) {
 				var td = document.createElement("td");
 				td.className = "align-left";
 				var img = document.createElement("img");
@@ -204,7 +209,12 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		}
 
 		if (data.precipitation) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+				td = document.createElement("td");
+				td.innerHTML = "<i class=\"wi wi-raindrop\"></i>";
+				td.className = "dimmed align-left";
+				return td;
+			}, function(i) {
 				td = document.createElement("td");
 				td.className = "align-left";
 
@@ -231,7 +241,12 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		}
 
 		if (data.temperature || data.temperature_min || date.temperature_max) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+				td = document.createElement("td");
+				td.innerHTML = "<i class=\"fa fa-thermometer-half\"></i>";
+				td.className = "dimmed align-left";
+				return td;
+			}, function(i) {
 				td = document.createElement("td");
 				td.className = "align-left";
 				if (data.temperature) {
@@ -266,7 +281,12 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		}
 
 		if (data.windspeed || data.windspeed_max) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+				td = document.createElement("td");
+				td.innerHTML = "<i class=\"wi wi-strong-wind\"></i>";
+				td.className = "dimmed align-left";
+				return td;
+			}, function(i) {
 				td = document.createElement("td");
 				td.className = "align-left";
 				if (data.windspeed) {
@@ -294,13 +314,13 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				}
 				if (data.winddirection) {
 //					span = document.createElement("span");
-//					span.innerHTML = "<i class=\"center-icon wi wi-wind from-" + self.round0(data.winddirection[i]) + "-deg\">&nbsp;</i>";
+//					span.innerHTML = "<i class=\"center-icon wi wi-wind from-" + self.round0(data.winddirection[i]) + "-deg\"></i>";
 //					span.className = "dimmed";
 //					td.appendChild(span);
 
 					span = document.createElement("span");
 					span.innerHTML = "&nbsp;" + self.translate(self.degToCompass(data.winddirection[i]));
-					span.className = "dimmed";
+					span.className = "dimmed align-right";
 					td.appendChild(span);
 				}
 				return td;
@@ -309,7 +329,12 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		}
 
 		if (data.lowclouds || data.midclouds || data.highclouds) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+				td = document.createElement("td");
+				td.innerHTML = "<i class=\"wi wi-cloud\"></i>";
+				td.className = "dimmed align-left align-top";
+				return td;
+			}, function(i) {
 				td = document.createElement("td");
 
 				if (data.highclouds) {
@@ -337,7 +362,12 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		}
 
 		if (data.lowclouds_min || data.midclouds_min || data.highclouds_min) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function(i) {
+			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+				td = document.createElement("td");
+				td.innerHTML = "<i class=\"wi wi-cloud align-top\"></i>";
+				td.className = "align-left align-top";
+				return td;
+			}, function(i) {
 				td = document.createElement("td");
 
 				if (data.highclouds_min) {
@@ -370,8 +400,16 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		return table;
 	},
 
-	createTableRow: function(data, dateTimeFormat, roundedNow, createTableData) {
+	createTableRow: function(data, dateTimeFormat, roundedNow, createTableHeader, createTableData) {
 		var tr = document.createElement("tr");
+
+		var th = null;
+		if (createTableHeader) {
+			th = createTableHeader();
+		} else {
+			th = document.createElement("td");
+		}
+		tr.appendChild(th);
 
 		opacity = 1.0;
 		for (let i = 0; i < data.time.length && i < this.config.maxElements; i++) {
@@ -446,9 +484,9 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				td = document.createElement("td");
 				td.className = "dimmed table-icon";
 				if (data.snowfraction && data.snowfraction[i] > 0.0) {
-					td.innerHTML = "<i class=\"wi wi-snowflake-cold\">&nbsp;</i>";
+					td.innerHTML = "<i class=\"wi wi-snowflake-cold\"></i>";
 				} else {
-					td.innerHTML = "<i class=\"wi wi-raindrop\">&nbsp;</i>";
+					td.innerHTML = "<i class=\"wi wi-raindrop\"></i>";
 				}
 				tr.appendChild(td);
 
@@ -476,7 +514,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 			if (data.temperature || data.temperature_min || data.temperature_max) {
 				td = document.createElement("td");
-				td.innerHTML = "<i class=\"fa fa-thermometer-half\">&nbsp;</i>";
+				td.innerHTML = "<i class=\"fa fa-thermometer-half\"></i>";
 				td.className = "dimmed table-icon";
 				tr.appendChild(td);
 			}
@@ -511,7 +549,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 			if (data.windspeed || data.windspeed_max) {
 				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-strong-wind\">&nbsp;</i>";
+				td.innerHTML = "<i class=\"wi wi-strong-wind\"></i>";
 				td.className = "dimmed table-icon";
 				tr.appendChild(td);
 			}
@@ -550,7 +588,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 			if (data.winddirection) {
 //				td = document.createElement("td");
-//				td.innerHTML = "<i class=\"center-icon wi wi-wind from-" + this.round0(data.winddirection[i]) + "-deg\">&nbsp;</i>";
+//				td.innerHTML = "<i class=\"center-icon wi wi-wind from-" + this.round0(data.winddirection[i]) + "-deg\"></i>";
 //				td.className = "dimmed";
 //				tr.appendChild(td);
 
@@ -562,7 +600,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 			if (data.lowclouds || data.lowclouds_min) {
 				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-cloud\">&nbsp;</i>";
+				td.innerHTML = "<i class=\"wi wi-cloud\"></i>";
 				td.className = "dimmed table-icon";
 				tr.appendChild(td);
 			}
