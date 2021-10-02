@@ -34,7 +34,7 @@ module.exports = NodeHelper.create({
             url: url,
             method: 'GET'
         }, (error, response, body) => {
-			console.log(response.statusCode + " : " + body);
+			//console.log(response.statusCode + " : " + body);
             if (!error && response.statusCode == 200) {
                 var result = JSON.parse(body);
 				this.sendSocketNotification('WEATHER_RESULT', result);
