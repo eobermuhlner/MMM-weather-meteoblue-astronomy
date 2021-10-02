@@ -2,21 +2,22 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	defaults: {
 		apikey: "",
 		package: "basic-day",
-		refreshHours: 1,
+		refreshHours: 6,
 		refreshMinutes: 0,
 		tz: "Europe%2FZurich",
 		pictogramSmall: 30,
 		pictogramLarge: 100,
 		layout: "vertical",
-		maxElements: 10,
+		maxElements: 7,
 		opacityFactor: 0.8,
 		timeFormat: "hh:mm",
-
+		show: [ "weekday", "time", "pictogram", "precipitation", "temperature", "wind", "clouds", "visibility" ],
 		daysOfWeek: [ "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" ]
 	},
 
 	getScripts: function() {
-		return [ "moment.js" ];
+		return [ "moment.js", "font-awesome.js" ];
+		return [ "moment.js", "font-awesome.js" ];
 	},
 
 	getStyles: function() {
@@ -76,12 +77,8 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 			dom = this.getCurrentDom(this.weather.data_current);
 			wrapper.appendChild(dom);
 		} else {
-			if (this.weather.data_xmin) {
-				dom = this.getForecastDom(this.weather.data_xmin, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
-				wrapper.appendChild(dom);
-			}
-			if (this.weather.data_1h) {
-				dom = this.getForecastDom(this.weather.data_1h, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
+			if (this.weather.data_day) {
+				dom = this.getForecastDom(this.weather.data_day, false, false, 'YYYY-MM-DD', mom.startOf('day'));
 				wrapper.appendChild(dom);
 			}
 			if (this.weather.data_3h) {
@@ -89,8 +86,12 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				dom = this.getForecastDom(this.weather.data_3h, true, true, 'YYYY-MM-DD hh:mm', mom.hours(hours_3).minutes(0).seconds(0).milliseconds(0));
 				wrapper.appendChild(dom);
 			}
-			if (this.weather.data_day) {
-				dom = this.getForecastDom(this.weather.data_day, false, false, 'YYYY-MM-DD', mom.startOf('day'));
+			if (this.weather.data_1h) {
+				dom = this.getForecastDom(this.weather.data_1h, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
+				wrapper.appendChild(dom);
+			}
+			if (this.weather.data_xmin) {
+				dom = this.getForecastDom(this.weather.data_xmin, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
 				wrapper.appendChild(dom);
 			}
 		}
@@ -100,7 +101,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 	getCurrentDom: function(data) {
 		table = document.createElement("table");
-		table.className = "small";
+		table.className = "medium";
 
 		tbody = document.createElement("tbody");
 		table.appendChild(tbody);
@@ -132,12 +133,20 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		// Windspeed
 		if (data.windspeed) {
 			td = document.createElement("td");
-			td.className = "align-left";
 			td.innerHTML = "<i class=\"wi wi-strong-wind\"></i>";
+			td.className = "align-left";
 			tr.appendChild(td);
 
 			td = document.createElement("td");
-			td.innerHTML = this.round1(data.windspeed) + " m/s";
+			span = document.createElement("span");
+			span.innerHTML = this.round1(data.windspeed);
+			td.className = "bright";
+			td.appendChild(span);
+
+			span = document.createElement("span");
+			span.innerHTML = "&nbsp;m/s";
+			td.className = "dimmed";
+			td.appendChild(span);
 			tr.appendChild(td);
 		}
 
@@ -155,246 +164,275 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	getForecastHorizontalDom: function(data, detailedPicto, showTime, dateTimeFormat, roundedNow) {
 		var self = this;
 		table = document.createElement("table");
-		table.className = "small";
+		table.className = "medium";
 
 		tbody = document.createElement("tbody");
 		table.appendChild(tbody);
 
-		if (data.time) {
-			var lastDayOfWeek = null;
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, null, function(i) {
-				td = document.createElement("td");
-				td.className = "align-left";
-				var dayOfWeek = mom.day();
-				if (dayOfWeek != lastDayOfWeek) {
-					td.innerHTML = self.translate(self.config.daysOfWeek[mom.day()]);
-				}
-				lastDayOfWeek = dayOfWeek;
-				return td;
-			});
-			tbody.appendChild(tr);
-		}
+		for (var showIndex = 0; showIndex < self.config.show.length; showIndex++) {
+			var showData = self.config.show[showIndex];
 
-		if (data.time && showTime) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-time-" + self.round0(roundedNow.hours()) + "\"></i>";
-				td.className = "dimmed align-left";
-				return td;
-			}, function(i) {
-				td = document.createElement("td");
-				td.innerHTML = mom.format(self.config.timeFormat);
-				td.className = "align-left";
-				return td;
-			});
-			tbody.appendChild(tr);
-		}
+			if (showData === 'weekday' && data.time) {
+				var lastDayOfWeek = null;
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, null, function(i) {
+					td = document.createElement("td");
+					td.className = "align-left";
+					var dayOfWeek = mom.day();
+					if (dayOfWeek != lastDayOfWeek) {
+						td.innerHTML = self.translate(self.config.daysOfWeek[mom.day()]);
+					}
+					lastDayOfWeek = dayOfWeek;
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
 
-		if (data.pictocode) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, null, function(i) {
-				var td = document.createElement("td");
-				td.className = "align-left";
-				var img = document.createElement("img");
-				if (detailedPicto) {
-					img.src = self.pictocodeDetailedToUrl(data.pictocode[i], data.isdaylight[i])
-				} else {
-					img.src = self.pictocodeToUrl(data.pictocode[i])
-				}
-				img.width = self.config.pictogramLarge;
-				img.height = self.config.pictogramLarge;
-				td.appendChild(img);
-				return td;
-			});
-			tbody.appendChild(tr);
-		}
+			if (showData === 'time' && data.time && showTime) {
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"wi wi-time-" + self.round0(roundedNow.hours()) + "\"></i>";
+					td.className = "dimmed align-left";
+					return td;
+				}, function(i) {
+					td = document.createElement("td");
+					td.innerHTML = mom.format(self.config.timeFormat);
+					td.className = "align-left";
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
 
-		if (data.precipitation) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-raindrop\"></i>";
-				td.className = "dimmed align-left";
-				return td;
-			}, function(i) {
-				td = document.createElement("td");
-				td.className = "align-left";
+			if (showData === 'pictogram' && data.pictocode) {
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, null, function(i) {
+					var td = document.createElement("td");
+					td.className = "align-left";
+					var img = document.createElement("img");
+					if (detailedPicto) {
+						img.src = self.pictocodeDetailedToUrl(data.pictocode[i], data.isdaylight[i])
+					} else {
+						img.src = self.pictocodeToUrl(data.pictocode[i])
+					}
+					img.width = self.config.pictogramLarge;
+					img.height = self.config.pictogramLarge;
+					td.appendChild(img);
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
 
-				span = document.createElement("span");
-				span.innerHTML = self.round1(data.precipitation[i]);
-				span.className = "bright";
-				td.appendChild(span);
+			if (showData === 'precipitation' && data.precipitation) {
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"wi wi-raindrop\"></i>";
+					td.className = "dimmed align-left";
+					return td;
+				}, function(i) {
+					td = document.createElement("td");
+					td.className = "align-left";
 
-				span = document.createElement("span");
-				span.innerHTML = " mm";
-				span.className = "dimmed xsmall";
-				td.appendChild(span);
-
-				if (data.precipitation_probability) {
 					span = document.createElement("span");
-					span.innerHTML = "&nbsp;" + data.precipitation_probability[i] + "%";
-					span.className = "dimmed xsmall";
-					td.appendChild(span);
-				}
-
-				return td;
-			});
-			tbody.appendChild(tr);
-		}
-
-		if (data.temperature || data.temperature_min || date.temperature_max) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"fa fa-thermometer-half\"></i>";
-				td.className = "dimmed align-left";
-				return td;
-			}, function(i) {
-				td = document.createElement("td");
-				td.className = "align-left";
-				if (data.temperature) {
-					span = document.createElement("span");
-					span.innerHTML = self.round1(data.temperature[i]) + "&deg;";
-					span.style.color = self.temperatureToColor(data.temperature[i]);
-					span.className = "bright";
-					td.appendChild(span);
-				}
-				if (data.temperature_min) {
-					span = document.createElement("span");
-					span.innerHTML = self.round1(data.temperature_min[i]) + "&deg;";
-					span.style.color = self.temperatureToColor(data.temperature_min[i]);
-					span.className = "bright";
-					td.appendChild(span);
-				}
-				if (data.temperature_min && data.temperature_max) {
-					span = document.createElement("span");
-					span.innerHTML = "&hellip;";
-					td.appendChild(span);
-				}
-				if (data.temperature_max) {
-					span = document.createElement("span");
-					span.innerHTML = self.round1(data.temperature_max[i]) + "&deg;";
-					span.style.color = self.temperatureToColor(data.temperature_max[i]);
-					span.className = "bright";
-					td.appendChild(span);
-				}
-				return td;
-			});
-			tbody.appendChild(tr);
-		}
-
-		if (data.windspeed || data.windspeed_max) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-strong-wind\"></i>";
-				td.className = "dimmed align-left";
-				return td;
-			}, function(i) {
-				td = document.createElement("td");
-				td.className = "align-left";
-				if (data.windspeed) {
-					span = document.createElement("span");
-					span.innerHTML = self.round1(data.windspeed[i]);
+					span.innerHTML = self.round1(data.precipitation[i]);
 					span.className = "bright";
 					td.appendChild(span);
 
 					span = document.createElement("span");
-					span.innerHTML = " m/s";
+					span.innerHTML = "&nbsp;mm";
 					span.className = "dimmed xsmall";
 					td.appendChild(span);
 
-				}
-				if (data.windspeed_max) {
+					if (data.precipitation_probability) {
+						span = document.createElement("span");
+						span.innerHTML = "&nbsp;" + data.precipitation_probability[i] + "%";
+						span.className = "dimmed xsmall";
+						td.appendChild(span);
+					}
+
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
+
+			if (showData === 'temperature' && (data.temperature || data.temperature_min || data.temperature_max)) {
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"fa fa-thermometer-half\"></i>";
+					td.className = "dimmed align-left";
+					return td;
+				}, function(i) {
+					td = document.createElement("td");
+					td.className = "align-left";
+					if (data.temperature) {
+						span = document.createElement("span");
+						span.innerHTML = self.round1(data.temperature[i]) + "&deg;";
+						span.style.color = self.temperatureToColor(data.temperature[i]);
+						span.className = "bright";
+						td.appendChild(span);
+					}
+					if (data.temperature_min) {
+						span = document.createElement("span");
+						span.innerHTML = self.round1(data.temperature_min[i]) + "&deg;";
+						span.style.color = self.temperatureToColor(data.temperature_min[i]);
+						span.className = "bright";
+						td.appendChild(span);
+					}
+					if (data.temperature_min && data.temperature_max) {
+						span = document.createElement("span");
+						span.innerHTML = "&hellip;";
+						td.appendChild(span);
+					}
+					if (data.temperature_max) {
+						span = document.createElement("span");
+						span.innerHTML = self.round1(data.temperature_max[i]) + "&deg;";
+						span.style.color = self.temperatureToColor(data.temperature_max[i]);
+						span.className = "bright";
+						td.appendChild(span);
+					}
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
+
+			if (showData === 'wind' && (data.windspeed || data.windspeed_max)) {
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"wi wi-strong-wind\"></i>";
+					td.className = "dimmed align-left";
+					return td;
+				}, function(i) {
+					td = document.createElement("td");
+					td.className = "align-left";
+					if (data.windspeed) {
+						span = document.createElement("span");
+						span.innerHTML = self.round1(data.windspeed[i]);
+						span.className = "bright";
+						td.appendChild(span);
+
+						span = document.createElement("span");
+						span.innerHTML = "&nbsp;m/s";
+						span.className = "dimmed xsmall";
+						td.appendChild(span);
+
+					}
+					if (data.windspeed_max) {
+						span = document.createElement("span");
+						span.innerHTML = self.round1(data.windspeed_max[i]);
+						span.className = "bright";
+						td.appendChild(span);
+
+						span = document.createElement("span");
+						span.innerHTML = "&nbsp;m/s";
+						span.className = "dimmed xsmall";
+						td.appendChild(span);
+					}
+					if (data.winddirection) {
+	//					span = document.createElement("span");
+	//					span.innerHTML = "<i class=\"center-icon wi wi-wind from-" + self.round0(data.winddirection[i]) + "-deg\"></i>";
+	//					span.className = "dimmed";
+	//					td.appendChild(span);
+
+						span = document.createElement("span");
+						span.innerHTML = "&nbsp;" + self.translate(self.degToCompass(data.winddirection[i]));
+						span.className = "dimmed xsmall align-right";
+						td.appendChild(span);
+					}
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
+
+			if (showData === 'clouds' && (data.lowclouds || data.midclouds || data.highclouds)) {
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"wi wi-cloud\"></i>";
+					td.className = "dimmed align-left align-top";
+					return td;
+				}, function(i) {
+					td = document.createElement("td");
+
+					if (data.highclouds) {
+						div = document.createElement("div");
+						div.appendChild(self.createCloudCoverElement(data.highclouds[i]));
+						div.className = "cloudlayer";
+						td.appendChild(div);
+					}
+					if (data.midclouds) {
+						div = document.createElement("div");
+						div.appendChild(self.createCloudCoverElement(data.midclouds[i]));
+						div.className = "cloudlayer";
+						td.appendChild(div);
+					}
+					if (data.lowclouds) {
+						div = document.createElement("div");
+						div.appendChild(self.createCloudCoverElement(data.lowclouds[i]));
+						div.className = "cloudlayer";
+						td.appendChild(div);
+					}
+
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
+
+			if (showData === 'clouds' && (data.lowclouds_min || data.midclouds_min || data.highclouds_min)) {
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"wi wi-cloud align-top\"></i>";
+					td.className = "align-left align-top";
+					return td;
+				}, function(i) {
+					td = document.createElement("td");
+
+					if (data.highclouds_min) {
+						div = document.createElement("div");
+						div.appendChild(self.createCloudCoverElement(data.highclouds_min[i]));
+						div.appendChild(self.createCloudCoverElement(data.highclouds_max[i]));
+						div.className = "cloudlayer";
+						td.appendChild(div);
+					}
+					if (data.midclouds_min) {
+						div = document.createElement("div");
+						div.appendChild(self.createCloudCoverElement(data.midclouds_min[i]));
+						div.appendChild(self.createCloudCoverElement(data.midclouds_max[i]));
+						div.className = "cloudlayer";
+						td.appendChild(div);
+					}
+					if (data.lowclouds_min) {
+						div = document.createElement("div");
+						div.appendChild(self.createCloudCoverElement(data.lowclouds_min[i]));
+						div.appendChild(self.createCloudCoverElement(data.lowclouds_max[i]));
+						div.className = "cloudlayer";
+						td.appendChild(div);
+					}
+
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
+
+			if (showData === 'visibility' && data.visibility) {
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
+					td = document.createElement("td");
+	//				td.innerHTML = "<i class=\"wi wi-raindrop\"></i>";
+	//				td.className = "dimmed align-left";
+					return td;
+				}, function(i) {
+					td = document.createElement("td");
+					td.className = "align-left";
+
 					span = document.createElement("span");
-					span.innerHTML = self.round1(data.windspeed_max[i]);
+					span.innerHTML = self.round0(data.visibility[i]);
 					span.className = "bright";
 					td.appendChild(span);
 
 					span = document.createElement("span");
-					span.innerHTML = " m/s";
+					span.innerHTML = "&nbsp;m";
 					span.className = "dimmed xsmall";
 					td.appendChild(span);
-				}
-				if (data.winddirection) {
-//					span = document.createElement("span");
-//					span.innerHTML = "<i class=\"center-icon wi wi-wind from-" + self.round0(data.winddirection[i]) + "-deg\"></i>";
-//					span.className = "dimmed";
-//					td.appendChild(span);
 
-					span = document.createElement("span");
-					span.innerHTML = "&nbsp;" + self.translate(self.degToCompass(data.winddirection[i]));
-					span.className = "dimmed align-right";
-					td.appendChild(span);
-				}
-				return td;
-			});
-			tbody.appendChild(tr);
-		}
-
-		if (data.lowclouds || data.midclouds || data.highclouds) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-cloud\"></i>";
-				td.className = "dimmed align-left align-top";
-				return td;
-			}, function(i) {
-				td = document.createElement("td");
-
-				if (data.highclouds) {
-					div = document.createElement("div");
-					div.appendChild(self.createCloudCoverElement(data.highclouds[i]));
-					div.className = "cloudlayer";
-					td.appendChild(div);
-				}
-				if (data.midclouds) {
-					div = document.createElement("div");
-					div.appendChild(self.createCloudCoverElement(data.midclouds[i]));
-					div.className = "cloudlayer";
-					td.appendChild(div);
-				}
-				if (data.lowclouds) {
-					div = document.createElement("div");
-					div.appendChild(self.createCloudCoverElement(data.lowclouds[i]));
-					div.className = "cloudlayer";
-					td.appendChild(div);
-				}
-
-				return td;
-			});
-			tbody.appendChild(tr);
-		}
-
-		if (data.lowclouds_min || data.midclouds_min || data.highclouds_min) {
-			var tr = self.createTableRow(data, dateTimeFormat, roundedNow, function() {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-cloud align-top\"></i>";
-				td.className = "align-left align-top";
-				return td;
-			}, function(i) {
-				td = document.createElement("td");
-
-				if (data.highclouds_min) {
-					div = document.createElement("div");
-					div.appendChild(self.createCloudCoverElement(data.highclouds_min[i]));
-					div.appendChild(self.createCloudCoverElement(data.highclouds_max[i]));
-					div.className = "cloudlayer";
-					td.appendChild(div);
-				}
-				if (data.midclouds_min) {
-					div = document.createElement("div");
-					div.appendChild(self.createCloudCoverElement(data.midclouds_min[i]));
-					div.appendChild(self.createCloudCoverElement(data.midclouds_max[i]));
-					div.className = "cloudlayer";
-					td.appendChild(div);
-				}
-				if (data.lowclouds_min) {
-					div = document.createElement("div");
-					div.appendChild(self.createCloudCoverElement(data.lowclouds_min[i]));
-					div.appendChild(self.createCloudCoverElement(data.lowclouds_max[i]));
-					div.className = "cloudlayer";
-					td.appendChild(div);
-				}
-
-				return td;
-			});
-			tbody.appendChild(tr);
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
 		}
 
 		return table;
@@ -412,9 +450,13 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		tr.appendChild(th);
 
 		opacity = 1.0;
-		for (let i = 0; i < data.time.length && i < this.config.maxElements; i++) {
+		elementCount = 0;
+		for (let i = 0; i < data.time.length; i++) {
 			mom = moment(data.time[i], dateTimeFormat);
 			if (mom < roundedNow) {
+				continue;
+			}
+			if (elementCount++ >= this.config.maxElements) {
 				continue;
 			}
 
@@ -429,7 +471,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 	getForecastVerticalDom: function(data, detailedPicto, dateTimeFormat, roundedNow) {
 		table = document.createElement("table");
-		table.className = "small";
+		table.className = "medium";
 
 		tbody = document.createElement("tbody");
 		table.appendChild(tbody);
@@ -449,255 +491,263 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 			opacity = opacity * this.config.opacityFactor;
 			tbody.appendChild(tr);
 
-			if (data.time) {
-				td = document.createElement("td");
-				td.className = "align-left";
-				var dayOfWeek = mom.day();
-				if (dayOfWeek != lastDayOfWeek) {
-					td.innerHTML = this.translate(this.config.daysOfWeek[mom.day()]);
+			for (var showIndex = 0; showIndex < this.config.show.length; showIndex++) {
+				var showData = this.config.show[showIndex];
+
+				if (showData === 'weekday' && data.time) {
+					td = document.createElement("td");
+					td.className = "align-left";
+					var dayOfWeek = mom.day();
+					if (dayOfWeek != lastDayOfWeek) {
+						td.innerHTML = this.translate(this.config.daysOfWeek[mom.day()]);
+					}
+					lastDayOfWeek = dayOfWeek;
+					tr.appendChild(td);
 				}
-				lastDayOfWeek = dayOfWeek;
-				tr.appendChild(td);
 
-				td = document.createElement("td");
-				td.className = "align-left";
-				lastDayOfWeek = dayOfWeek;
-				td.innerHTML = mom.format(this.config.timeFormat);
-				tr.appendChild(td);
-			}
-
-			if (data.pictocode) {
-				td = document.createElement("td");
-				img = document.createElement("img");
-				if (detailedPicto) {
-					img.src = this.pictocodeDetailedToUrl(data.pictocode[i], data.isdaylight[i])
-				} else {
-					img.src = this.pictocodeToUrl(data.pictocode[i])
+				if (showData === 'time' && data.time) {
+					td = document.createElement("td");
+					td.className = "align-left";
+					lastDayOfWeek = dayOfWeek;
+					td.innerHTML = mom.format(this.config.timeFormat);
+					tr.appendChild(td);
 				}
-				img.width = this.config.pictogramSmall;
-				img.height = this.config.pictogramSmall;
-				td.appendChild(img);
-				tr.appendChild(td);
-			}
 
-			if (data.precipitation) {
-				td = document.createElement("td");
-				td.className = "dimmed table-icon";
-				if (data.snowfraction && data.snowfraction[i] > 0.0) {
-					td.innerHTML = "<i class=\"wi wi-snowflake-cold\"></i>";
-				} else {
-					td.innerHTML = "<i class=\"wi wi-raindrop\"></i>";
+				if (showData === 'pictogram' && data.pictocode) {
+					td = document.createElement("td");
+					img = document.createElement("img");
+					if (detailedPicto) {
+						img.src = this.pictocodeDetailedToUrl(data.pictocode[i], data.isdaylight[i])
+					} else {
+						img.src = this.pictocodeToUrl(data.pictocode[i])
+					}
+					img.width = this.config.pictogramSmall;
+					img.height = this.config.pictogramSmall;
+					td.appendChild(img);
+					tr.appendChild(td);
 				}
-				tr.appendChild(td);
 
-				td = document.createElement("td");
+				if (showData === 'precipitation' && data.precipitation) {
+					td = document.createElement("td");
+					td.className = "dimmed table-icon";
+					if (data.snowfraction && data.snowfraction[i] > 0.0) {
+						td.innerHTML = "<i class=\"wi wi-snowflake-cold\"></i>";
+					} else {
+						td.innerHTML = "<i class=\"wi wi-raindrop\"></i>";
+					}
+					tr.appendChild(td);
 
-				scan = document.createElement("scan");
-				scan.innerHTML = this.round1(data.precipitation[i]);
-				scan.className = "bright";
-				td.appendChild(scan);
+					td = document.createElement("td");
 
-				scan = document.createElement("scan");
-				scan.innerHTML = "&nbsp;mm";
-				scan.className = "dimmed xsmall";
-				td.appendChild(scan);
+					scan = document.createElement("scan");
+					scan.innerHTML = this.round1(data.precipitation[i]);
+					scan.className = "bright";
+					td.appendChild(scan);
 
-				tr.appendChild(td);
-			}
+					scan = document.createElement("scan");
+					scan.innerHTML = "&nbsp;mm";
+					scan.className = "dimmed xsmall";
+					td.appendChild(scan);
 
-			if (data.precipitation_probability) {
-				td = document.createElement("td");
-				td.innerHTML = "&nbsp;" + data.precipitation_probability[i] + "%";
-				td.className = "dimmed xsmall";
-				tr.appendChild(td);
-			}
+					tr.appendChild(td);
+				}
 
-			if (data.temperature || data.temperature_min || data.temperature_max) {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"fa fa-thermometer-half\"></i>";
-				td.className = "dimmed table-icon";
-				tr.appendChild(td);
-			}
+				if (showData === 'precipitation' && data.precipitation_probability) {
+					td = document.createElement("td");
+					td.innerHTML = "&nbsp;" + data.precipitation_probability[i] + "%";
+					td.className = "dimmed xsmall";
+					tr.appendChild(td);
+				}
 
-			if (data.temperature) {
-				td = document.createElement("td");
-				td.innerHTML = this.round1(data.temperature[i]) + "&deg;";
-				td.style.color = this.temperatureToColor(data.temperature[i]);
-				td.className = "bright";
-				tr.appendChild(td);
-			}
+				if (showData === 'temperature' && (data.temperature || data.temperature_min || data.temperature_max)) {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"fa fa-thermometer-half\"></i>";
+					td.className = "dimmed table-icon";
+					tr.appendChild(td);
+				}
 
-			if (data.temperature_min) {
-				td = document.createElement("td");
-				td.innerHTML = this.round1(data.temperature_min[i]) + "&deg;";
-				td.style.color = this.temperatureToColor(data.temperature_min[i]);
-				td.className = "bright";
-				tr.appendChild(td);
-			}
+				if (showData === 'temperature' && data.temperature) {
+					td = document.createElement("td");
+					td.innerHTML = this.round1(data.temperature[i]) + "&deg;";
+					td.style.color = this.temperatureToColor(data.temperature[i]);
+					td.className = "bright";
+					tr.appendChild(td);
+				}
 
-			if (data.temperature_max) {
-				td = document.createElement("td");
-				td.innerHTML = "&hellip;";
-				tr.appendChild(td);
+				if (showData === 'temperature' && data.temperature_min) {
+					td = document.createElement("td");
+					td.innerHTML = this.round1(data.temperature_min[i]) + "&deg;";
+					td.style.color = this.temperatureToColor(data.temperature_min[i]);
+					td.className = "bright";
+					tr.appendChild(td);
+				}
 
-				td = document.createElement("td");
-				td.innerHTML = this.round1(data.temperature_max[i]) + "&deg;";
-				td.style.color = this.temperatureToColor(data.temperature_max[i]);
-				td.className = "bright";
-				tr.appendChild(td);
-			}
+				if (showData === 'temperature' && data.temperature_min && data.temperature_max) {
+					td = document.createElement("td");
+					td.innerHTML = "&hellip;";
+					tr.appendChild(td);
+				}
 
-			if (data.windspeed || data.windspeed_max) {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-strong-wind\"></i>";
-				td.className = "dimmed table-icon";
-				tr.appendChild(td);
-			}
+				if (showData === 'temperature' && data.temperature_max) {
+					td = document.createElement("td");
+					td.innerHTML = this.round1(data.temperature_max[i]) + "&deg;";
+					td.style.color = this.temperatureToColor(data.temperature_max[i]);
+					td.className = "bright";
+					tr.appendChild(td);
+				}
 
-			if (data.windspeed) {
-				td = document.createElement("td");
+				if (showData === 'wind' && (data.windspeed || data.windspeed_max)) {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"wi wi-strong-wind\"></i>";
+					td.className = "dimmed table-icon";
+					tr.appendChild(td);
+				}
 
-				scan = document.createElement("scan");
-				scan.innerHTML = this.round1(data.windspeed[i]);
-				scan.className = "bright";
-				td.appendChild(scan);
+				if (showData === 'wind' && data.windspeed) {
+					td = document.createElement("td");
 
-				scan = document.createElement("scan");
-				scan.innerHTML = "&nbsp;m/s";
-				scan.className = "dimmed xsmall";
-				td.appendChild(scan);
+					scan = document.createElement("scan");
+					scan.innerHTML = this.round1(data.windspeed[i]);
+					scan.className = "bright";
+					td.appendChild(scan);
 
-				tr.appendChild(td);
-			}
+					scan = document.createElement("scan");
+					scan.innerHTML = "&nbsp;m/s";
+					scan.className = "dimmed xsmall";
+					td.appendChild(scan);
 
-			if (data.windspeed_max) {
-				td = document.createElement("td");
+					tr.appendChild(td);
+				}
 
-				scan = document.createElement("scan");
-				scan.innerHTML = this.round1(data.windspeed_max[i]);
-				scan.className = "bright";
-				td.appendChild(scan);
+				if (showData === 'wind' && data.windspeed_max) {
+					td = document.createElement("td");
 
-				scan = document.createElement("scan");
-				scan.innerHTML = "&nbsp;m/s";
-				scan.className = "dimmed xsmall";
-				td.appendChild(scan);
+					scan = document.createElement("scan");
+					scan.innerHTML = this.round1(data.windspeed_max[i]);
+					scan.className = "bright";
+					td.appendChild(scan);
 
-				tr.appendChild(td);
-			}
+					scan = document.createElement("scan");
+					scan.innerHTML = "&nbsp;m/s";
+					scan.className = "dimmed xsmall";
+					td.appendChild(scan);
 
-			if (data.winddirection) {
-//				td = document.createElement("td");
-//				td.innerHTML = "<i class=\"center-icon wi wi-wind from-" + this.round0(data.winddirection[i]) + "-deg\"></i>";
-//				td.className = "dimmed";
-//				tr.appendChild(td);
+					tr.appendChild(td);
+				}
 
-				td = document.createElement("td");
-				td.innerHTML = "&nbsp;" + this.translate(this.degToCompass(data.winddirection[i]));
-				td.className = "dimmed";
-				tr.appendChild(td);
-			}
+				if (showData === 'wind' && data.winddirection) {
+	//				td = document.createElement("td");
+	//				td.innerHTML = "<i class=\"center-icon wi wi-wind from-" + this.round0(data.winddirection[i]) + "-deg\"></i>";
+	//				td.className = "dimmed";
+	//				tr.appendChild(td);
 
-			if (data.lowclouds || data.lowclouds_min) {
-				td = document.createElement("td");
-				td.innerHTML = "<i class=\"wi wi-cloud\"></i>";
-				td.className = "dimmed table-icon";
-				tr.appendChild(td);
-			}
+					td = document.createElement("td");
+					td.innerHTML = "&nbsp;" + this.translate(this.degToCompass(data.winddirection[i]));
+					td.className = "dimmed";
+					tr.appendChild(td);
+				}
 
-			if (data.lowclouds) {
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.lowclouds[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
-			if (data.midclouds) {
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.midclouds[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
-			if (data.highclouds) {
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.highclouds[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
+				if (showData === 'clouds' && (data.lowclouds || data.lowclouds_min)) {
+					td = document.createElement("td");
+					td.innerHTML = "<i class=\"wi wi-cloud\"></i>";
+					td.className = "dimmed table-icon";
+					tr.appendChild(td);
+				}
 
-			if (data.lowclouds_min) {
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.lowclouds_min[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
-			if (data.midclouds_min) {
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.midclouds_min[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
-			if (data.highclouds_min) {
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.highclouds_min[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
+				if (showData === 'clouds' && data.lowclouds) {
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.lowclouds[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
+				if (showData === 'clouds' && data.midclouds) {
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.midclouds[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
+				if (showData === 'clouds' && data.highclouds) {
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.highclouds[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
 
-			if (data.lowclouds_max) {
-				td = document.createElement("td");
-				td.innerHTML = "&hellip;";
-				tr.appendChild(td);
+				if (showData === 'clouds' && data.lowclouds_min) {
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.lowclouds_min[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
+				if (showData === 'clouds' && data.midclouds_min) {
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.midclouds_min[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
+				if (showData === 'clouds' && data.highclouds_min) {
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.highclouds_min[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
 
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.lowclouds_max[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
-			if (data.midclouds_max) {
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.midclouds_max[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
-			if (data.highclouds_max) {
-				td = document.createElement("td");
-				div = document.createElement("div");
-				div.appendChild(this.createCloudCoverElement(data.highclouds_max[i]));
-				div.className = "cloudlayer";
-				td.appendChild(div);
-				tr.appendChild(td);
-			}
+				if (showData === 'clouds' && data.lowclouds_max) {
+					td = document.createElement("td");
+					td.innerHTML = "&hellip;";
+					tr.appendChild(td);
 
-			if (data.visibility) {
-				td = document.createElement("td");
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.lowclouds_max[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
+				if (showData === 'clouds' && data.midclouds_max) {
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.midclouds_max[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
+				if (showData === 'clouds' && data.highclouds_max) {
+					td = document.createElement("td");
+					div = document.createElement("div");
+					div.appendChild(this.createCloudCoverElement(data.highclouds_max[i]));
+					div.className = "cloudlayer";
+					td.appendChild(div);
+					tr.appendChild(td);
+				}
 
-				span = document.createElement("span");
-				span.innerHTML = data.visibility[i];
-				span.className = "bright";
-				td.appendChild(span);
+				if (showData === 'visibility' && data.visibility) {
+					td = document.createElement("td");
 
-				span = document.createElement("span");
-				span.innerHTML = "&nbsp;m";
-				span.className = "dimmed xsmall";
-				td.appendChild(span);
+					span = document.createElement("span");
+					span.innerHTML = data.visibility[i];
+					span.className = "bright";
+					td.appendChild(span);
 
-				tr.appendChild(td);
+					span = document.createElement("span");
+					span.innerHTML = "&nbsp;m";
+					span.className = "dimmed xsmall";
+					td.appendChild(span);
+
+					tr.appendChild(td);
+				}
 			}
 		}
 
