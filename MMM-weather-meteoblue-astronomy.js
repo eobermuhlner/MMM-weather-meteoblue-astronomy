@@ -32,12 +32,14 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	},
 
 	start: function () {
-		this.url = "https://my.meteoblue.com/packages/" + this.config.package + "?apikey=" + this.config.apikey + "&lat=" + this.config.lat + "&lon=" + this.config.lon + "&format=json&tz=" + this.config.tz
-		if (this.config.asl) {
-			this.url += "&asl=" + this.config.asl
+		var self = this;
+
+		self.url = "https://my.meteoblue.com/packages/" + self.config.package + "?apikey=" + self.config.apikey + "&lat=" + self.config.lat + "&lon=" + self.config.lon + "&format=json&tz=" + self.config.tz
+		if (self.config.asl) {
+			self.url += "&asl=" + self.config.asl
 		}
 
-		this.weather = null;
+		self.weather = null;
 	},
 
 	round0: function (v) {
@@ -51,47 +53,48 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	},
 
 	getDom: function() {
+		var self = this;
 		//console.log("getDom: ");
 
 		var wrapper = document.createElement("div");
 
-		if (this.config.apikey === '') {
-			wrapper.innerHTML = this.translate("MISSING_APIKEY", { module: this.name });
+		if (self.config.apikey === '') {
+			wrapper.innerHTML = self.translate("MISSING_APIKEY", { module: self.name });
 			wrapper.className = "dimmed light small";
 			return wrapper;
 		}
 
-		if (!this.weather) {
-			wrapper.innerHTML = this.translate("LOADING");
+		if (!self.weather) {
+			wrapper.innerHTML = self.translate("LOADING");
 			wrapper.className = "dimmed light small";
 			return wrapper;
 		}
 
-		if (this.config.apikey === 'TEST') {
+		if (self.config.apikey === 'TEST') {
 			mom = moment('2021-09-29 05:33');
 		} else {
 			mom = moment();
 		}
 
-		if (this.config.package.includes("current")) {
-			dom = this.getCurrentDom(this.weather.data_current);
+		if (self.config.package.includes("current")) {
+			dom = self.getCurrentDom(self.weather.data_current);
 			wrapper.appendChild(dom);
 		} else {
-			if (this.weather.data_day) {
-				dom = this.getForecastDom(this.weather.data_day, false, false, 'YYYY-MM-DD', mom.startOf('day'));
+			if (self.weather.data_day) {
+				dom = self.getForecastDom(self.weather.data_day, false, false, 'YYYY-MM-DD', mom.startOf('day'));
 				wrapper.appendChild(dom);
 			}
-			if (this.weather.data_3h) {
+			if (self.weather.data_3h) {
 				hours_3 = Math.floor(mom.hours()/3)*3;
-				dom = this.getForecastDom(this.weather.data_3h, true, true, 'YYYY-MM-DD hh:mm', mom.hours(hours_3).minutes(0).seconds(0).milliseconds(0));
+				dom = self.getForecastDom(self.weather.data_3h, true, true, 'YYYY-MM-DD hh:mm', mom.hours(hours_3).minutes(0).seconds(0).milliseconds(0));
 				wrapper.appendChild(dom);
 			}
-			if (this.weather.data_1h) {
-				dom = this.getForecastDom(this.weather.data_1h, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
+			if (self.weather.data_1h) {
+				dom = self.getForecastDom(self.weather.data_1h, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
 				wrapper.appendChild(dom);
 			}
-			if (this.weather.data_xmin) {
-				dom = this.getForecastDom(this.weather.data_xmin, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
+			if (self.weather.data_xmin) {
+				dom = self.getForecastDom(self.weather.data_xmin, true, true, 'YYYY-MM-DD hh:mm', mom.startOf('hour'));
 				wrapper.appendChild(dom);
 			}
 		}
@@ -100,6 +103,8 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	},
 
 	getCurrentDom: function(data) {
+		var self = this;
+
 		table = document.createElement("table");
 		table.className = "medium";
 
@@ -113,9 +118,9 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		tr.appendChild(td);
 
 		img = document.createElement("img");
-		img.src = this.pictocodeDetailedToUrl(data.pictocode_detailed, data.isdaylight)
-		img.width = this.config.pictogramLarge;
-		img.height = this.config.pictogramLarge;
+		img.src = self.pictocodeDetailedToUrl(data.pictocode_detailed, data.isdaylight)
+		img.width = self.config.pictogramLarge;
+		img.height = self.config.pictogramLarge;
 		td.appendChild(img);
 
 		// Temperature
@@ -126,7 +131,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 			tr.appendChild(td);
 
 			td = document.createElement("td");
-			td.innerHTML = this.round1(data.temperature) + "&deg;";
+			td.innerHTML = self.round1(data.temperature) + "&deg;";
 			tr.appendChild(td);
 		}
 
@@ -139,7 +144,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 			td = document.createElement("td");
 			span = document.createElement("span");
-			span.innerHTML = this.round1(data.windspeed);
+			span.innerHTML = self.round1(data.windspeed);
 			td.className = "bright";
 			td.appendChild(span);
 
@@ -154,15 +159,18 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	},
 
 	getForecastDom: function(data, detailedPicto, showTime, dateTimeFormat, roundedNow) {
-		if (this.config.layout === 'vertical') {
-			return this.getForecastVerticalDom(data, detailedPicto, showTime, dateTimeFormat, roundedNow);
+		var self = this;
+
+		if (self.config.layout === 'vertical') {
+			return self.getForecastVerticalDom(data, detailedPicto, showTime, dateTimeFormat, roundedNow);
 		} else {
-			return this.getForecastHorizontalDom(data, detailedPicto, showTime, dateTimeFormat, roundedNow);
+			return self.getForecastHorizontalDom(data, detailedPicto, showTime, dateTimeFormat, roundedNow);
 		}
 	},
 
 	getForecastHorizontalDom: function(data, detailedPicto, showTime, dateTimeFormat, roundedNow) {
 		var self = this;
+
 		table = document.createElement("table");
 		table.className = "medium";
 
@@ -439,6 +447,8 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	},
 
 	createTableRow: function(data, dateTimeFormat, roundedNow, createTableHeader, createTableData) {
+		var self = this;
+
 		var tr = document.createElement("tr");
 
 		var th = null;
@@ -456,13 +466,13 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 			if (mom < roundedNow) {
 				continue;
 			}
-			if (elementCount++ >= this.config.maxElements) {
+			if (elementCount++ >= self.config.maxElements) {
 				continue;
 			}
 
 			var td = createTableData(i);
 			td.style.opacity = opacity;
-			opacity = opacity * this.config.opacityFactor;
+			opacity = opacity * self.config.opacityFactor;
 			tr.appendChild(td);
 		}
 
@@ -470,6 +480,8 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	},
 
 	getForecastVerticalDom: function(data, detailedPicto, dateTimeFormat, roundedNow) {
+		var self = this;
+
 		table = document.createElement("table");
 		table.className = "medium";
 
@@ -480,7 +492,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 		// add data rows
 		opacity = 1.0;
-		for (let i = 0; i < data.time.length && i < this.config.maxElements; i++) {
+		for (let i = 0; i < data.time.length && i < self.config.maxElements; i++) {
 			mom = moment(data.time[i], dateTimeFormat);
 			if (mom < roundedNow) {
 				continue;
@@ -488,18 +500,18 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 			tr = document.createElement("tr");
 			tr.style.opacity = opacity;
-			opacity = opacity * this.config.opacityFactor;
+			opacity = opacity * self.config.opacityFactor;
 			tbody.appendChild(tr);
 
-			for (var showIndex = 0; showIndex < this.config.show.length; showIndex++) {
-				var showData = this.config.show[showIndex];
+			for (var showIndex = 0; showIndex < self.config.show.length; showIndex++) {
+				var showData = self.config.show[showIndex];
 
 				if (showData === 'weekday' && data.time) {
 					td = document.createElement("td");
 					td.className = "align-left";
 					var dayOfWeek = mom.day();
 					if (dayOfWeek != lastDayOfWeek) {
-						td.innerHTML = this.translate(this.config.daysOfWeek[mom.day()]);
+						td.innerHTML = self.translate(self.config.daysOfWeek[mom.day()]);
 					}
 					lastDayOfWeek = dayOfWeek;
 					tr.appendChild(td);
@@ -509,7 +521,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 					td = document.createElement("td");
 					td.className = "align-left";
 					lastDayOfWeek = dayOfWeek;
-					td.innerHTML = mom.format(this.config.timeFormat);
+					td.innerHTML = mom.format(self.config.timeFormat);
 					tr.appendChild(td);
 				}
 
@@ -517,12 +529,12 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 					td = document.createElement("td");
 					img = document.createElement("img");
 					if (detailedPicto) {
-						img.src = this.pictocodeDetailedToUrl(data.pictocode[i], data.isdaylight[i])
+						img.src = self.pictocodeDetailedToUrl(data.pictocode[i], data.isdaylight[i])
 					} else {
-						img.src = this.pictocodeToUrl(data.pictocode[i])
+						img.src = self.pictocodeToUrl(data.pictocode[i])
 					}
-					img.width = this.config.pictogramSmall;
-					img.height = this.config.pictogramSmall;
+					img.width = self.config.pictogramSmall;
+					img.height = self.config.pictogramSmall;
 					td.appendChild(img);
 					tr.appendChild(td);
 				}
@@ -540,7 +552,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 					td = document.createElement("td");
 
 					scan = document.createElement("scan");
-					scan.innerHTML = this.round1(data.precipitation[i]);
+					scan.innerHTML = self.round1(data.precipitation[i]);
 					scan.className = "bright";
 					td.appendChild(scan);
 
@@ -568,16 +580,16 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 				if (showData === 'temperature' && data.temperature) {
 					td = document.createElement("td");
-					td.innerHTML = this.round1(data.temperature[i]) + "&deg;";
-					td.style.color = this.temperatureToColor(data.temperature[i]);
+					td.innerHTML = self.round1(data.temperature[i]) + "&deg;";
+					td.style.color = self.temperatureToColor(data.temperature[i]);
 					td.className = "bright";
 					tr.appendChild(td);
 				}
 
 				if (showData === 'temperature' && data.temperature_min) {
 					td = document.createElement("td");
-					td.innerHTML = this.round1(data.temperature_min[i]) + "&deg;";
-					td.style.color = this.temperatureToColor(data.temperature_min[i]);
+					td.innerHTML = self.round1(data.temperature_min[i]) + "&deg;";
+					td.style.color = self.temperatureToColor(data.temperature_min[i]);
 					td.className = "bright";
 					tr.appendChild(td);
 				}
@@ -590,8 +602,8 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 				if (showData === 'temperature' && data.temperature_max) {
 					td = document.createElement("td");
-					td.innerHTML = this.round1(data.temperature_max[i]) + "&deg;";
-					td.style.color = this.temperatureToColor(data.temperature_max[i]);
+					td.innerHTML = self.round1(data.temperature_max[i]) + "&deg;";
+					td.style.color = self.temperatureToColor(data.temperature_max[i]);
 					td.className = "bright";
 					tr.appendChild(td);
 				}
@@ -607,7 +619,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 					td = document.createElement("td");
 
 					scan = document.createElement("scan");
-					scan.innerHTML = this.round1(data.windspeed[i]);
+					scan.innerHTML = self.round1(data.windspeed[i]);
 					scan.className = "bright";
 					td.appendChild(scan);
 
@@ -623,7 +635,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 					td = document.createElement("td");
 
 					scan = document.createElement("scan");
-					scan.innerHTML = this.round1(data.windspeed_max[i]);
+					scan.innerHTML = self.round1(data.windspeed_max[i]);
 					scan.className = "bright";
 					td.appendChild(scan);
 
@@ -637,12 +649,12 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 				if (showData === 'wind' && data.winddirection) {
 	//				td = document.createElement("td");
-	//				td.innerHTML = "<i class=\"center-icon wi wi-wind from-" + this.round0(data.winddirection[i]) + "-deg\"></i>";
+	//				td.innerHTML = "<i class=\"center-icon wi wi-wind from-" + self.round0(data.winddirection[i]) + "-deg\"></i>";
 	//				td.className = "dimmed";
 	//				tr.appendChild(td);
 
 					td = document.createElement("td");
-					td.innerHTML = "&nbsp;" + this.translate(this.degToCompass(data.winddirection[i]));
+					td.innerHTML = "&nbsp;" + self.translate(self.degToCompass(data.winddirection[i]));
 					td.className = "dimmed";
 					tr.appendChild(td);
 				}
@@ -657,7 +669,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				if (showData === 'clouds' && data.lowclouds) {
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.lowclouds[i]));
+					div.appendChild(self.createCloudCoverElement(data.lowclouds[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -665,7 +677,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				if (showData === 'clouds' && data.midclouds) {
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.midclouds[i]));
+					div.appendChild(self.createCloudCoverElement(data.midclouds[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -673,7 +685,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				if (showData === 'clouds' && data.highclouds) {
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.highclouds[i]));
+					div.appendChild(self.createCloudCoverElement(data.highclouds[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -682,7 +694,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				if (showData === 'clouds' && data.lowclouds_min) {
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.lowclouds_min[i]));
+					div.appendChild(self.createCloudCoverElement(data.lowclouds_min[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -690,7 +702,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				if (showData === 'clouds' && data.midclouds_min) {
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.midclouds_min[i]));
+					div.appendChild(self.createCloudCoverElement(data.midclouds_min[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -698,7 +710,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				if (showData === 'clouds' && data.highclouds_min) {
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.highclouds_min[i]));
+					div.appendChild(self.createCloudCoverElement(data.highclouds_min[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -711,7 +723,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.lowclouds_max[i]));
+					div.appendChild(self.createCloudCoverElement(data.lowclouds_max[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -719,7 +731,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				if (showData === 'clouds' && data.midclouds_max) {
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.midclouds_max[i]));
+					div.appendChild(self.createCloudCoverElement(data.midclouds_max[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -727,7 +739,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 				if (showData === 'clouds' && data.highclouds_max) {
 					td = document.createElement("td");
 					div = document.createElement("div");
-					div.appendChild(this.createCloudCoverElement(data.highclouds_max[i]));
+					div.appendChild(self.createCloudCoverElement(data.highclouds_max[i]));
 					div.className = "cloudlayer";
 					td.appendChild(div);
 					tr.appendChild(td);
@@ -755,46 +767,55 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	},
 
 	createCloudCoverElement: function(cloud) {
+		var self = this;
+
 		var span = document.createElement("span");
 		span.innerHTML = cloud + "%";
 		span.className = "xsmall";
-		span.style.color = this.cloudToForegroundColor(cloud);
-		span.style.backgroundColor = this.cloudToBackgroundColor(cloud);
+		span.style.color = self.cloudToForegroundColor(cloud);
+		span.style.backgroundColor = self.cloudToBackgroundColor(cloud);
 		span.style.flex = 1;
 		return span;
 	},
 
 	getWeather: function() {
-		console.log("getWeather: " + this.url);
+		var self = this;
 
-		this.sendSocketNotification('GET_WEATHER', this.url);
+		console.log("getWeather: " + self.url);
+
+		self.sendSocketNotification('GET_WEATHER', self.url);
 	},
 
 	notificationReceived: function(notification, payload, sender) {
-		//console.log("notificationReceived: " + this.notification);
+		var self = this;
+
+		//console.log("notificationReceived: " + self.notification);
 
 		switch(notification) {
 			case "DOM_OBJECTS_CREATED":
-				this.getWeather();
+				self.getWeather();
 
-				var millis = this.config.refreshHours*60*60*1000 + this.config.refreshMinutes*60*1000
+				var millis = self.config.refreshHours*60*60*1000 + self.config.refreshMinutes*60*1000
 				var timer = setInterval(()=>{
-					this.getWeather();
+					self.getWeather();
 				}, millis)
 				break;
 			}
 	},
 
 	processWeather: function(data) {
-		this.weather = data;
+		var self = this;
+
+		self.weather = data;
 	},
 
 	socketNotificationReceived: function(notification, payload) {
-		//console.log("socketNotificationReceived: " + this.notification);
+		var self = this;
+		//console.log("socketNotificationReceived: " + self.notification);
 
 		if (notification === 'WEATHER_RESULT') {
-			this.processWeather(payload);
-			this.updateDom();
+			self.processWeather(payload);
+			self.updateDom();
 		}
 	},
 
@@ -831,12 +852,14 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 	},
 
 	pictocodeToUrl: function(pictocode) {
-		return "./modules/MMM-weather-meteoblue-astronomy/icons/" + this.padDigits(pictocode, 2) + "_iday.svg";
+		var self = this;
+		return "./modules/MMM-weather-meteoblue-astronomy/icons/" + self.padDigits(pictocode, 2) + "_iday.svg";
 	},
 
 	pictocodeDetailedToUrl: function(pictocode, isdaylight) {
+		var self = this;
 		pictoSuffix = isdaylight ? "day" : "night";
-		return "./modules/MMM-weather-meteoblue-astronomy/icons/" + this.padDigits(pictocode, 2) + "_" + pictoSuffix + ".svg";
+		return "./modules/MMM-weather-meteoblue-astronomy/icons/" + self.padDigits(pictocode, 2) + "_" + pictoSuffix + ".svg";
 	},
 
 	degToCompass: function(num) {
