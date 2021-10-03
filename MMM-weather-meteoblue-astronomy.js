@@ -10,13 +10,13 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		layout: "vertical",
 		maxElements: 7,
 		opacityFactor: 0.8,
-		timeFormat: "hh:mm",
-		show: [ "weekday", "time", "pictogram", "precipitation", "temperature", "wind", "clouds", "visibility" ],
+		dateFormat: "DD.MM.YYYY",
+		timeFormat: "HH:mm",
+		show: [ "date", "weekday", "time", "pictogram", "precipitation", "temperature", "wind", "clouds", "visibility" ],
 		daysOfWeek: [ "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" ]
 	},
 
 	getScripts: function() {
-		return [ "moment.js", "font-awesome.js" ];
 		return [ "moment.js", "font-awesome.js" ];
 	},
 
@@ -190,6 +190,24 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 						td.innerHTML = self.translate(self.config.daysOfWeek[mom.day()]);
 					}
 					lastDayOfWeek = dayOfWeek;
+					return td;
+				});
+				tbody.appendChild(tr);
+			}
+
+			if (showData === 'date' && data.time) {
+				var lastDate = null;
+				var tr = self.createTableRow(data, dateTimeFormat, roundedNow, null, function(i) {
+					td = document.createElement("td");
+					td.className = "align-left";
+					span = document.createElement("span");
+					span.className = "xsmall dimmed";
+					var date = mom.format(self.config.dateFormat);
+					if (date != lastDate) {
+						span.innerHTML = date;
+					}
+					lastDate = date;
+					td.appendChild(span);
 					return td;
 				});
 				tbody.appendChild(tr);
@@ -479,7 +497,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		return tr;
 	},
 
-	getForecastVerticalDom: function(data, detailedPicto, dateTimeFormat, roundedNow) {
+	getForecastVerticalDom: function(data, detailedPicto, showTime, dateTimeFormat, roundedNow) {
 		var self = this;
 
 		table = document.createElement("table");
@@ -489,6 +507,7 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 		table.appendChild(tbody);
 
 		var lastDayOfWeek = null;
+		var lastDate = null;
 
 		// add data rows
 		opacity = 1.0;
@@ -517,7 +536,18 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 					tr.appendChild(td);
 				}
 
-				if (showData === 'time' && data.time) {
+				if (showData === 'date' && data.time) {
+					td = document.createElement("td");
+					td.className = "align-left";
+					date = mom.format(self.config.dateFormat);
+					if (date != lastDate) {
+						td.innerHTML = date;
+					}
+					lastDate = date;
+					tr.appendChild(td);
+				}
+
+				if (showData === 'time' && data.time && showTime) {
 					td = document.createElement("td");
 					td.className = "align-left";
 					lastDayOfWeek = dayOfWeek;
@@ -795,10 +825,14 @@ Module.register("MMM-weather-meteoblue-astronomy", {
 			case "DOM_OBJECTS_CREATED":
 				self.getWeather();
 
-				var millis = self.config.refreshHours*60*60*1000 + self.config.refreshMinutes*60*1000
+				var timer = setInterval(()=>{
+					self.updateDom();
+				}, 15*60*1000);
+
+				var millis = self.config.refreshHours*60*60*1000 + self.config.refreshMinutes*60*1000;
 				var timer = setInterval(()=>{
 					self.getWeather();
-				}, millis)
+				}, millis);
 				break;
 			}
 	},
