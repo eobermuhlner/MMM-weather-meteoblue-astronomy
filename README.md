@@ -21,7 +21,7 @@ git clone https://github.com/eobermuhlner/MMM-weather-meteoblue-astronomy.git
 Get an API Key from meteoblue: https://www.meteoblue.com/en/weather-api
 
 Edit the `MagicMirror/config/config.js` file:
-```json
+```json5
 	modules: [
     {
       module: "MMM-weather-meteoblue-astronomy",
@@ -57,7 +57,7 @@ This allows to test the plugin without incurring cost for requests.
 
 Default configuration:
 
-```json
+```json5
 		package: "basic-3h",
 		refreshHours: 6,
 		refreshMinutes: 0,
@@ -96,7 +96,7 @@ Default configuration:
 
 ### Horizontal `basic-1h` with custom order
 
-```json
+```json5
     package: "basic-1h",
     layout: "horizontal",
     show: [ "weekday", "time", "pictogram", "temperature" ],
